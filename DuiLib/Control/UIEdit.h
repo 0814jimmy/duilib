@@ -17,6 +17,7 @@ namespace DuiLib
 		LPVOID GetInterface(LPCTSTR pstrName);
 		UINT GetControlFlags() const;
 		HWND GetNativeWindow() const;
+        //virtual void SetFocus();
 
 		void SetEnabled(bool bEnable = true);
 		void SetText(LPCTSTR pstrText);
@@ -45,6 +46,12 @@ namespace DuiLib
 		void SetDisabledImage(LPCTSTR pStrImage);
 		void SetNativeEditBkColor(DWORD dwBkColor);
 		DWORD GetNativeEditBkColor() const;
+
+        void SetTipValueColor(DWORD dwColor);
+        DWORD GetTipValueColor() const;
+        void SetTipValue(LPCTSTR pstrText);
+        CDuiString GetTipValue() const;
+        CDuiString GetSrcTipValue() const;
 
 		void SetSel(long nStartChar, long nEndChar);
 		void SetSelAll();
@@ -77,6 +84,10 @@ namespace DuiLib
 		TDrawInfo m_diHot;
 		TDrawInfo m_diFocused;
 		TDrawInfo m_diDisabled;
+
+        CDuiString m_sTipValue;
+        CDuiString m_sSrcTipValue;
+        DWORD m_dwTipValueColor;
 	};
 }
 #endif // __UIEDIT_H__

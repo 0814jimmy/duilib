@@ -46,7 +46,7 @@
 #endif
 
 #define UILIB_COMDAT __declspec(selectany)
-
+/*
 #if defined _M_IX86
 #	pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #elif defined _M_IA64
@@ -56,7 +56,7 @@
 #else
 #	pragma comment(linker, "/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
-
+*/
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
@@ -80,6 +80,7 @@
 #include "Core/UIRender.h"
 #include "Utils/WinImplBase.h"
 #include "Utils/WndShadow.h"
+#include "Utils/DpiHelper.h"
 
 #include "Layout/UIVerticalLayout.h"
 #include "Layout/UIHorizontalLayout.h"

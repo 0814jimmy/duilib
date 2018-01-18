@@ -7,6 +7,8 @@ namespace DuiLib
 {
 	/////////////////////////////////////////////////////////////////////////////////////
 	//
+    DUILIB_API void InitDuiLib(unsigned int uDPI);
+    DUILIB_API void UnInitDuiLib();
 
 	class DUILIB_API STRINGorID
 	{

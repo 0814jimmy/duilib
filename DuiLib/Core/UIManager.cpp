@@ -51,6 +51,157 @@ typedef struct tagTIMERINFO
 
 /////////////////////////////////////////////////////////////////////////////////////
 
+float KernelBSpline(const float x)
+{
+    if (x>2.0f) return 0.0f;
+    // thanks to Kristian Kratzenstein
+    float a, b, c, d;
+    float xm1 = x - 1.0f; // Was calculatet anyway cause the "if((x-1.0f) < 0)"
+    float xp1 = x + 1.0f;
+    float xp2 = x + 2.0f;
+
+    if ((xp2) <= 0.0f)
+        a = 0.0f;
+    else
+        a = xp2*xp2*xp2; // Only float, not float -> double -> float
+    if ((xp1) <= 0.0f)
+        b = 0.0f;
+    else
+        b = xp1*xp1*xp1;
+    if (x <= 0)
+        c = 0.0f;
+    else
+        c = x*x*x;  
+    if ((xm1) <= 0.0f)
+        d = 0.0f;
+    else
+        d = xm1*xm1*xm1;
+
+    return (0.16666666666666666667f * (a - (4.0f * b) + (6.0f * c) - (4.0f * d)));
+}
+
+HBITMAP tagTImageInfo::CreateNewHBitmap(int nNewWidth, int nNewHeight)
+{
+    BITMAPINFO bmi;
+    memset(&bmi, 0, sizeof(bmi));
+
+    if(!nNewWidth || !nNewHeight)
+    {
+        return NULL;
+    }
+
+    bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
+    bmi.bmiHeader.biWidth = nNewWidth;
+    bmi.bmiHeader.biHeight = nNewHeight;
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biSizeImage = nNewWidth * nNewHeight * 4;
+    bmi.bmiHeader.biCompression = BI_RGB;
+
+    LPBYTE *pByte = NULL;
+    HBITMAP hBitmap = ::CreateDIBSection(NULL, &bmi, DIB_RGB_COLORS, (VOID**)&pByte, NULL, 0);
+
+    return hBitmap;
+}
+
+BOOL tagTImageInfo::Resample(int nNewWidth, int nNewHeight)
+{
+    if(nNewWidth == nX && nNewHeight == nY)
+        return TRUE;
+
+    HBITMAP hNewBitmap = CreateNewHBitmap(nNewWidth, nNewHeight);
+    if(!hNewBitmap)
+        return FALSE;
+
+    BITMAP Bitmap = {0};
+    BITMAP NewBitmap = {0};
+    HBITMAP hBitmapNow = hBitmap;
+    if(!GetObject(hBitmapNow, sizeof(BITMAP), &Bitmap) || !GetObject(hNewBitmap, sizeof(BITMAP), &NewBitmap))
+    {
+        if(hBitmapNow)
+            ::DeleteObject(hBitmapNow);
+        ::DeleteObject(hNewBitmap);
+        return FALSE;
+    }
+
+    float xScale = 0.0f;
+    float yScale = 0.0f;
+    float fX = 0.0f;
+    float fY = 0.0f;
+    xScale = (float) nX / (float) nNewWidth;
+    yScale = (float) nY / (float) nNewHeight;
+
+    float f_x, f_y, a, b, rr, gg, bb, aa, r1, r2;
+    int i_x, i_y, xx, yy;
+    RGBQUAD rgba;
+    unsigned char *iDst = NULL;
+    for(int y = 0; y < nNewHeight; y++)
+    {
+        f_y = (float) y * yScale - 0.5f;
+        i_y = (int) floor(f_y);
+        a   = f_y - (float) floor(f_y);
+        for(int x = 0; x < nNewWidth; x++)
+        {
+            f_x = (float) x * xScale - 0.5f;
+            i_x = (int) floor(f_x);
+            b   = f_x - (float) floor(f_x);
+
+            rr = gg = bb = aa = 0.0f;
+            for(int m = -1; m < 3; m++)
+            {
+                r1 = KernelBSpline((float) m - a);
+                yy = i_y + m;
+                if (yy < 0)
+                    yy = 0;
+                if (yy >= (int) nY)
+                    yy = (int) nY - 1;
+                for(int n = -1; n < 3; n++)
+                {
+                    r2 = r1 * KernelBSpline(b - (float)n);
+                    xx = i_x+n;
+                    if (xx < 0)
+                        xx = 0;
+                    if (xx >= (int) nX)
+                        xx = (int) nX - 1;
+
+                    iDst = (unsigned char *) ((ULONG_PTR) Bitmap.bmBits + yy * Bitmap.bmWidthBytes + xx * 4);
+                    memcpy(&rgba, iDst, 4);
+                    iDst+=4;
+                    //rgba.rgbBlue = *iDst++;
+                    //rgba.rgbGreen= *iDst++;
+                    //rgba.rgbRed  = *iDst++;
+                    //rgba.rgbReserved = *iDst;
+
+                    rr += rgba.rgbRed * r2;
+                    gg += rgba.rgbGreen * r2;
+                    bb += rgba.rgbBlue * r2;
+                    aa += rgba.rgbReserved * r2;
+                }
+            }
+
+            iDst = (unsigned char *) ((ULONG_PTR) NewBitmap.bmBits + y * NewBitmap.bmWidthBytes + x * 4);
+            *iDst++ = (unsigned char)bb;
+            *iDst++ = (unsigned char)gg;
+            *iDst++ = (unsigned char)rr;
+            *iDst = (unsigned char)aa;
+        }
+    }
+
+    if(hBitmap)
+    {
+        ::DeleteObject(hBitmap);
+        hBitmap = NULL;
+    }
+    nX = nNewWidth;
+    nY = nNewHeight;
+
+    hBitmap = hNewBitmap;
+
+    return TRUE;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
 tagTDrawInfo::tagTDrawInfo()
 {
 	Clear();
@@ -1355,10 +1506,13 @@ bool CPaintManagerUI::MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, LR
         break;
     case WM_LBUTTONUP:
         {
+            if (IsCaptured())
+            {
+                ReleaseCapture();
+            }
             POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
             m_ptLastMousePos = pt;
             if( m_pEventClick == NULL ) break;
-            ReleaseCapture();
             TEventUI event = { 0 };
             event.Type = UIEVENT_BUTTONUP;
             event.pSender = m_pEventClick;
@@ -3512,7 +3666,7 @@ bool CPaintManagerUI::TranslateMessage(const LPMSG pMsg)
 		//		for( int i = 0; i < m_aPreMessages.GetSize(); i++ ) 
 		for( int i = m_aPreMessages.GetSize() - 1; i >= 0 ; --i ) 
 		{
-			CPaintManagerUI* pT = static_cast<CPaintManagerUI*>(m_aPreMessages[i]);        
+			CPaintManagerUI* pT = static_cast<CPaintManagerUI*>(m_aPreMessages[i]);
 			HWND hTempParent = hWndParent;
 			while(hTempParent)
 			{
@@ -3523,10 +3677,10 @@ bool CPaintManagerUI::TranslateMessage(const LPMSG pMsg)
 						return true;
 
 					pT->PreMessageHandler(pMsg->message, pMsg->wParam, pMsg->lParam, lRes);
-					// 					if( pT->PreMessageHandler(pMsg->message, pMsg->wParam, pMsg->lParam, lRes) ) 
+					// 					if( pT->PreMessageHandler(pMsg->message, pMsg->wParam, pMsg->lParam, lRes) )
 					// 						return true;
 					// 
-					// 					return false;  
+					// 					return false;
 				}
 				hTempParent = GetParent(hTempParent);
 			}
@@ -3535,7 +3689,7 @@ bool CPaintManagerUI::TranslateMessage(const LPMSG pMsg)
 	}
 	else
 	{
-		for( int i = 0; i < m_aPreMessages.GetSize(); i++ ) 
+		for( int i = 0; i < m_aPreMessages.GetSize(); i++ )
 		{
 			int size = m_aPreMessages.GetSize();
 			CPaintManagerUI* pT = static_cast<CPaintManagerUI*>(m_aPreMessages[i]);

@@ -584,7 +584,7 @@ STDMETHODIMP CActiveXCtrl::RequestUIActivate(void)
     return S_OK;
 }
 
-STDMETHODIMP CActiveXCtrl::CanInPlaceActivate(void)       
+STDMETHODIMP CActiveXCtrl::CanInPlaceActivate(void)
 {
     DUITRACE(_T("AX: CActiveXCtrl::CanInPlaceActivate"));
     return S_OK;

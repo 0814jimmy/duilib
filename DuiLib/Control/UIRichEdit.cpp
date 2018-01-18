@@ -1698,6 +1698,7 @@ RECT CRichEditUI::GetTextPadding() const
 
 void CRichEditUI::SetTextPadding(RECT rc)
 {
+    DPI_SCALE(&rc);
 	m_rcTextPadding = rc;
 	Invalidate();
 }
@@ -2287,10 +2288,10 @@ void CRichEditUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
 	else if( _tcscmp(pstrName, _T("textpadding")) == 0 ) {
 		RECT rcTextPadding = { 0 };
 		LPTSTR pstr = NULL;
-		rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);    
-		rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-		rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
-		rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);    
+		rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);
+		rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+		rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
+		rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
 		SetTextPadding(rcTextPadding);
 	}
     else CContainerUI::SetAttribute(pstrName, pstrValue);

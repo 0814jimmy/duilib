@@ -196,6 +196,7 @@ namespace DuiLib
 
 	void CVerticalLayoutUI::SetSepHeight(int iHeight)
 	{
+        DPI_SCALE(&iHeight);
 		m_iSepHeight = iHeight;
 	}
 

@@ -622,30 +622,37 @@ void CComboUI::DoEvent(TEventUI& event)
             switch( event.chKey ) {
             case VK_F4:
                 Activate();
+                break;
             case VK_UP:
                 SetSelectCloseFlag(false);
                 SelectItem(FindSelectable(m_iCurSel - 1, false));
                 SetSelectCloseFlag(true);
+                break;
             case VK_DOWN:
                 SetSelectCloseFlag(false);
                 SelectItem(FindSelectable(m_iCurSel + 1, true));
                 SetSelectCloseFlag(true);
+                break;
             case VK_PRIOR:
                 SetSelectCloseFlag(false);
                 SelectItem(FindSelectable(m_iCurSel - 1, false));
                 SetSelectCloseFlag(true);
+                break;
             case VK_NEXT:
                 SetSelectCloseFlag(false);
                 SelectItem(FindSelectable(m_iCurSel + 1, true));
                 SetSelectCloseFlag(true);
+                break;
             case VK_HOME:
                 SetSelectCloseFlag(false);
                 SelectItem(FindSelectable(0, false));
                 SetSelectCloseFlag(true);
+                break;
             case VK_END:
                 SetSelectCloseFlag(false);
                 SelectItem(FindSelectable(GetCount() - 1, true));
                 SetSelectCloseFlag(true);
+                break;
             }
             return;
         }
@@ -696,7 +703,7 @@ void CComboUI::DoEvent(TEventUI& event)
 
 SIZE CComboUI::EstimateSize(SIZE szAvailable)
 {
-    if( m_cxyFixed.cy == 0 ) return CDuiSize(m_cxyFixed.cx, m_pManager->GetDefaultFontInfo()->tm.tmHeight + 8);
+    if( m_cxyFixed.cy == 0 ) return CDuiSize(m_cxyFixed.cx, m_pManager->GetDefaultFontInfo()->tm.tmHeight + DPI_SCALE_FORCE(8));
     return CControlUI::EstimateSize(szAvailable);
 }
 
@@ -742,6 +749,7 @@ SIZE CComboUI::GetDropBoxSize() const
 
 void CComboUI::SetDropBoxSize(SIZE szDropBox)
 {
+    DPI_SCALE(&szDropBox);
     m_szDropBox = szDropBox;
 }
 
@@ -763,6 +771,7 @@ RECT CComboUI::GetTextPadding() const
 
 void CComboUI::SetTextPadding(RECT rc)
 {
+    DPI_SCALE(&rc);
     m_rcTextPadding = rc;
     Invalidate();
 }
@@ -877,6 +886,7 @@ RECT CComboUI::GetItemTextPadding() const
 
 void CComboUI::SetItemTextPadding(RECT rc)
 {
+    DPI_SCALE(&rc);
     m_ListInfo.rcTextPadding = rc;
     Invalidate();
 }
@@ -1026,6 +1036,7 @@ int CComboUI::GetItemHLineSize() const
 
 void CComboUI::SetItemHLineSize(int iSize)
 {
+    DPI_SCALE(&iSize);
     m_ListInfo.iHLineSize = iSize;
 }
 
@@ -1046,6 +1057,7 @@ int CComboUI::GetItemVLineSize() const
 
 void CComboUI::SetItemVLineSize(int iSize)
 {
+    DPI_SCALE(&iSize);
     m_ListInfo.iVLineSize = iSize;
 }
 
@@ -1108,11 +1120,11 @@ void CComboUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
 	{
 		SIZE szDropBoxSize = { 0 };
 		LPTSTR pstr = NULL;
-		szDropBoxSize.cx = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);    
-		szDropBoxSize.cy = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
+		szDropBoxSize.cx = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);
+		szDropBoxSize.cy = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
 		SetDropBoxSize(szDropBoxSize);
 	}
-    else if( _tcscmp(pstrName, _T("itemheight")) == 0 ) m_ListInfo.uFixedHeight = _ttoi(pstrValue);
+    else if( _tcscmp(pstrName, _T("itemheight")) == 0 ) m_ListInfo.uFixedHeight = DPI_SCALE_FORCE(_ttoi(pstrValue));
     else if( _tcscmp(pstrName, _T("itemfont")) == 0 ) m_ListInfo.nFont = _ttoi(pstrValue);
     else if( _tcscmp(pstrName, _T("itemalign")) == 0 ) {
         if( _tcsstr(pstrValue, _T("left")) != NULL ) {
@@ -1131,10 +1143,10 @@ void CComboUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
     if( _tcscmp(pstrName, _T("itemtextpadding")) == 0 ) {
         RECT rcTextPadding = { 0 };
         LPTSTR pstr = NULL;
-        rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);    
-        rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-        rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
-        rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);    
+        rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);
+        rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+        rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
+        rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
         SetItemTextPadding(rcTextPadding);
     }
     else if( _tcscmp(pstrName, _T("itemtextcolor")) == 0 ) {

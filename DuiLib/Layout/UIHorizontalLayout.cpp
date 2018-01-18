@@ -130,10 +130,10 @@ namespace DuiLib
 			if (iControlMaxHeight <= 0) iControlMaxHeight = pControl->GetMaxHeight();
 			if (szControlAvailable.cx > iControlMaxWidth) szControlAvailable.cx = iControlMaxWidth;
 			if (szControlAvailable.cy > iControlMaxHeight) szControlAvailable.cy = iControlMaxHeight;
-      cxFixedRemaining = cxFixedRemaining - (rcPadding.left + rcPadding.right);
+            cxFixedRemaining = cxFixedRemaining - (rcPadding.left + rcPadding.right);
 			if (iEstimate > 1) cxFixedRemaining = cxFixedRemaining - m_iChildPadding;
 			SIZE sz = pControl->EstimateSize(szControlAvailable);
-			if (pControl->GetFixedWidth() == 0 || sz.cx == 0) {
+            if (pControl->GetFixedWidth() == 0 && sz.cx == 0) {
 				iAdjustable++;
 				sz.cx = cxExpand;
 				// Distribute remaining to last element (usually round-off left-overs)
@@ -149,7 +149,8 @@ namespace DuiLib
 				cxFixedRemaining -= sz.cx;
 			}
 
-			sz.cy = pControl->GetMaxHeight();
+			// sz.cy = pControl->GetMaxHeight();
+            if( sz.cy > pControl->GetMaxHeight() ) sz.cy = pControl->GetMaxHeight();
 			if( sz.cy == 0 ) sz.cy = szAvailable.cy - rcPadding.top - rcPadding.bottom;
 			if( sz.cy < 0 ) sz.cy = 0;
 			if( sz.cy > szControlAvailable.cy ) sz.cy = szControlAvailable.cy;
@@ -187,6 +188,42 @@ namespace DuiLib
 			cxNeeded += sz.cx + rcPadding.left + rcPadding.right;
 			szRemaining.cx -= sz.cx + m_iChildPadding + rcPadding.right;
 		}
+        UINT iChildAlign = GetChildAlign();
+        if (iChildAlign == DT_CENTER) {
+            LONG uWidth = 0;
+            unsigned int uleft = 0;
+            for( int it3 = 0; it3 < m_items.GetSize(); it3++ ) {
+                CControlUI* pControl = static_cast<CControlUI*>(m_items[it3]);
+                if( pControl->IsFloat() ) {
+                    SetFloatPos(it3);
+                    continue;
+                }
+                if( !pControl->IsVisible() ) continue;
+                SIZE szAll;
+                RECT rcCtrlPadding = pControl->GetPadding();
+                szAll.cx = m_rcItem.right - m_rcItem.left - rcCtrlPadding.left;
+                szAll.cy = m_rcItem.bottom - m_rcItem.top - rcCtrlPadding.top;
+                SIZE sz = pControl->EstimateSize(szAll);
+                uWidth += sz.cx + rcCtrlPadding.left;
+            }
+            uWidth >= (m_rcItem.right - m_rcItem.left) ? uWidth = (m_rcItem.right - m_rcItem.left) : uWidth = uWidth;
+            uleft = m_rcItem.left + (m_rcItem.right - m_rcItem.left - uWidth)/2;
+            for( int it4 = 0; it4 < m_items.GetSize(); it4++ ) {
+                CControlUI* pControl = static_cast<CControlUI*>(m_items[it4]);
+                if( pControl->IsFloat() ) {
+                    SetFloatPos(it4);
+                    continue;
+                }
+                RECT rcCtrl = pControl->GetPos();
+                RECT rcNewCtrl = {0};
+                rcNewCtrl.left = uleft + rcCtrl.left;
+                rcNewCtrl.right = uleft + rcCtrl.right;
+                rcNewCtrl.top = rcCtrl.top;
+                rcNewCtrl.bottom = rcCtrl.bottom;
+                pControl->SetPos(rcNewCtrl, false);
+            }
+        }
+        
 		cxNeeded += (nEstimateNum - 1) * m_iChildPadding;
 
 		// Process the scrollbar
@@ -203,6 +240,7 @@ namespace DuiLib
 
 	void CHorizontalLayoutUI::SetSepWidth(int iWidth)
 	{
+        DPI_SCALE(&iWidth);
 		m_iSepWidth = iWidth;
 	}
 

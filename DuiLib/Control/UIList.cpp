@@ -396,18 +396,25 @@ void CListUI::DoEvent(TEventUI& event)
             switch( event.chKey ) {
             case VK_UP:
                 SelectItem(FindSelectable(m_iCurSel - 1, false), true);
+                break;
             case VK_DOWN:
                 SelectItem(FindSelectable(m_iCurSel + 1, true), true);
+                break;
             case VK_PRIOR:
                 PageUp();
+                break;
             case VK_NEXT:
                 PageDown();
+                break;
             case VK_HOME:
                 SelectItem(FindSelectable(0, false), true);
+                break;
             case VK_END:
                 SelectItem(FindSelectable(GetCount() - 1, true), true);
+                break;
             case VK_RETURN:
                 if( m_iCurSel != -1 ) GetItemAt(m_iCurSel)->Activate();
+                break;
             }
             return;
         }
@@ -545,6 +552,7 @@ void CListUI::SetItemTextStyle(UINT uStyle)
 
 void CListUI::SetItemTextPadding(RECT rc)
 {
+    DPI_SCALE(&rc);
     m_ListInfo.rcTextPadding = rc;
     NeedUpdate();
 }
@@ -711,6 +719,7 @@ int CListUI::GetItemHLineSize() const
 
 void CListUI::SetItemHLineSize(int iSize)
 {
+    DPI_SCALE(&iSize);
     m_ListInfo.iHLineSize = iSize;
     Invalidate();
 }
@@ -733,6 +742,7 @@ int CListUI::GetItemVLineSize() const
 
 void CListUI::SetItemVLineSize(int iSize)
 {
+    DPI_SCALE(&iSize);
     m_ListInfo.iVLineSize = iSize;
     Invalidate();
 }
@@ -833,7 +843,7 @@ void CListUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
     else if( _tcscmp(pstrName, _T("headerbkimage")) == 0 ) GetHeader()->SetBkImage(pstrValue);
     else if( _tcscmp(pstrName, _T("scrollselect")) == 0 ) SetScrollSelect(_tcscmp(pstrValue, _T("true")) == 0);
     else if( _tcscmp(pstrName, _T("multiexpanding")) == 0 ) SetMultiExpanding(_tcscmp(pstrValue, _T("true")) == 0);
-    else if( _tcscmp(pstrName, _T("itemheight")) == 0 ) m_ListInfo.uFixedHeight = _ttoi(pstrValue);
+    else if( _tcscmp(pstrName, _T("itemheight")) == 0 ) m_ListInfo.uFixedHeight = DPI_SCALE_FORCE(_ttoi(pstrValue));
     else if( _tcscmp(pstrName, _T("itemfont")) == 0 ) m_ListInfo.nFont = _ttoi(pstrValue);
     else if( _tcscmp(pstrName, _T("itemalign")) == 0 ) {
         if( _tcsstr(pstrValue, _T("left")) != NULL ) {
@@ -878,10 +888,10 @@ void CListUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
     else if( _tcscmp(pstrName, _T("itemtextpadding")) == 0 ) {
         RECT rcTextPadding = { 0 };
         LPTSTR pstr = NULL;
-        rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);    
-        rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-        rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
-        rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);    
+        rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);
+        rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+        rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
+        rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
         SetItemTextPadding(rcTextPadding);
     }
     else if( _tcscmp(pstrName, _T("itemtextcolor")) == 0 ) {
@@ -1434,7 +1444,7 @@ SIZE CListHeaderUI::EstimateSize(SIZE szAvailable)
 		for( int it = 0; it < m_items.GetSize(); it++ ) {
 			cXY.cy = MAX(cXY.cy,static_cast<CControlUI*>(m_items[it])->EstimateSize(szAvailable).cy);
 		}
-		int nMin = m_pManager->GetDefaultFontInfo()->tm.tmHeight + 8;
+		int nMin = m_pManager->GetDefaultFontInfo()->tm.tmHeight + DPI_SCALE_FORCE(8);
 		cXY.cy = MAX(cXY.cy,nMin);
 	}
 
@@ -1501,6 +1511,7 @@ DWORD CListHeaderItemUI::GetSepWidth() const
 
 void CListHeaderItemUI::SetSepWidth(int iWidth)
 {
+    DPI_SCALE(&iWidth);
     m_iSepWidth = iWidth;
 }
 
@@ -1545,6 +1556,7 @@ RECT CListHeaderItemUI::GetTextPadding() const
 
 void CListHeaderItemUI::SetTextPadding(RECT rc)
 {
+    DPI_SCALE(&rc);
 	m_rcTextPadding = rc;
 	Invalidate();
 }
@@ -1685,10 +1697,10 @@ void CListHeaderItemUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
 	else if( _tcscmp(pstrName, _T("textpadding")) == 0 ) {
 		RECT rcTextPadding = { 0 };
 		LPTSTR pstr = NULL;
-		rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);    
-		rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-		rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
-		rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);    
+		rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);
+		rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+		rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
+		rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
 		SetTextPadding(rcTextPadding);
 	}
     else if( _tcscmp(pstrName, _T("showhtml")) == 0 ) SetShowHtml(_tcscmp(pstrValue, _T("true")) == 0);
@@ -1813,7 +1825,7 @@ void CListHeaderItemUI::DoEvent(TEventUI& event)
 
 SIZE CListHeaderItemUI::EstimateSize(SIZE szAvailable)
 {
-    if( m_cxyFixed.cy == 0 ) return CDuiSize(m_cxyFixed.cx, m_pManager->GetDefaultFontInfo()->tm.tmHeight + 8);
+    if( m_cxyFixed.cy == 0 ) return CDuiSize(m_cxyFixed.cx, m_pManager->GetDefaultFontInfo()->tm.tmHeight + DPI_SCALE_FORCE(8));
     return CControlUI::EstimateSize(szAvailable);
 }
 
@@ -2250,7 +2262,7 @@ SIZE CListLabelElementUI::EstimateSize(SIZE szAvailable)
 
         if ((pInfo->uTextStyle & DT_SINGLELINE) != 0) {
             if( m_cxyFixedLast.cy == 0 ) {
-                m_cxyFixedLast.cy = m_pManager->GetFontInfo(pInfo->nFont)->tm.tmHeight + 8;
+                m_cxyFixedLast.cy = m_pManager->GetFontInfo(pInfo->nFont)->tm.tmHeight + DPI_SCALE_FORCE(8);
                 m_cxyFixedLast.cy += pInfo->rcTextPadding.top + pInfo->rcTextPadding.bottom;
             }
             if (m_cxyFixedLast.cx == 0) {
@@ -2508,7 +2520,7 @@ SIZE CListTextElementUI::EstimateSize(SIZE szAvailable)
 
         if ((pInfo->uTextStyle & DT_SINGLELINE) != 0) {
             if( m_cxyFixedLast.cy == 0 ) {
-                m_cxyFixedLast.cy = m_pManager->GetFontInfo(pInfo->nFont)->tm.tmHeight + 8;
+                m_cxyFixedLast.cy = m_pManager->GetFontInfo(pInfo->nFont)->tm.tmHeight + DPI_SCALE_FORCE(8);
                 m_cxyFixedLast.cy += pInfo->rcTextPadding.top + pInfo->rcTextPadding.bottom;
             }
             if (m_cxyFixedLast.cx == 0) {
@@ -2771,6 +2783,18 @@ bool CListContainerElementUI::Select(bool bSelect, bool bTriggerEvent)
     return true;
 }
 
+/*
+bool CListContainerElementUI::Select(bool bSelect, bool bTakeFouce, bool bTriggerEvent)
+{
+    if( !IsEnabled() ) return false;
+    if( bSelect == m_bSelected ) return true;
+    m_bSelected = bSelect;
+    if( bSelect && m_pOwner != NULL ) m_pOwner->SelectItem(m_iIndex, bTakeFouce, bTriggerEvent);
+    Invalidate();
+    return true;
+}
+*/
+
 bool CListContainerElementUI::IsExpandable() const
 {
     return m_bExpandable;
@@ -2823,7 +2847,10 @@ void CListContainerElementUI::DoEvent(TEventUI& event)
     {
         if (IsKeyboardEnabled() && IsEnabled()) {
             if( event.chKey == VK_RETURN ) {
-                Activate();
+                //Activate();
+                //Invalidate();
+                m_pManager->SendNotify(this, DUI_MSGTYPE_ITEMCLICK);
+                Select();
                 Invalidate();
                 return;
             }
@@ -2927,6 +2954,7 @@ void CListContainerElementUI::DrawItemBk(HDC hDC, const RECT& rcItem)
 		if( DrawImage(hDC, pInfo->diSelected) ) return;
 	}
 	if( (m_uButtonState & UISTATE_HOT) != 0 ) {
+        //Select();
 		if( DrawImage(hDC, pInfo->diHot) ) return;
 	}
 	if( !DrawImage(hDC, m_diBk) ) {

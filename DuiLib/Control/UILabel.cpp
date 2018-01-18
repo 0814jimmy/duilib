@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "UILabel.h"
+#pragma warning( disable: 4482 )
 
 namespace DuiLib
 {
@@ -19,7 +20,7 @@ namespace DuiLib
 		m_EnableEffect(false),
 		m_bEnableLuminous(false),
 		m_fLuminousFuzzy(3),
-		m_gdiplusToken(0),
+		//m_gdiplusToken(0),
 		m_dwTextColor1(-1),
 		m_dwTextShadowColorA(0xff000000),
 		m_dwTextShadowColorB(-1),
@@ -37,10 +38,11 @@ namespace DuiLib
         m_cxyFixedLast.cx = m_cxyFixedLast.cy = 0;
         m_szAvailableLast.cx = m_szAvailableLast.cy = 0;
 		::ZeroMemory(&m_rcTextPadding, sizeof(m_rcTextPadding));
-
+/*
 #ifdef _USE_GDIPLUS
         GdiplusStartup( &m_gdiplusToken,&m_gdiplusStartupInput, NULL);
 #endif
+*/
 	}
 
 	CLabelUI::~CLabelUI()
@@ -50,10 +52,11 @@ namespace DuiLib
 #else
 		if( m_pWideText ) delete[] m_pWideText;
 #endif
-
+/*
 #ifdef _USE_GDIPLUS
 		GdiplusShutdown( m_gdiplusToken );
 #endif
+*/
 	}
 
 	LPCTSTR CLabelUI::GetClass() const
@@ -123,6 +126,11 @@ namespace DuiLib
         m_bNeedEstimateSize = true;
 	}
 
+    bool CLabelUI::GetMultiLine()
+    {
+        return (m_uTextStyle & ~DT_SINGLELINE) != 0;
+    }
+
 	void CLabelUI::SetTextColor(DWORD dwTextColor)
 	{
 		m_dwTextColor = dwTextColor;
@@ -164,6 +172,7 @@ namespace DuiLib
 
 	void CLabelUI::SetTextPadding(RECT rc)
 	{
+        DPI_SCALE(&rc);
 		m_rcTextPadding = rc;
         m_bNeedEstimateSize = true;
 		Invalidate();
@@ -198,7 +207,7 @@ namespace DuiLib
             m_cxyFixedLast = m_cxyFixed;
             if ((m_uTextStyle & DT_SINGLELINE) != 0) {
                 if (m_cxyFixedLast.cy == 0) {
-                    m_cxyFixedLast.cy = m_pManager->GetFontInfo(m_iFont)->tm.tmHeight + 8;
+                    m_cxyFixedLast.cy = m_pManager->GetFontInfo(m_iFont)->tm.tmHeight + DPI_SCALE_FORCE(8);
                     m_cxyFixedLast.cy += m_rcTextPadding.top + m_rcTextPadding.bottom;
                 }
                 if (m_cxyFixedLast.cx == 0) {
@@ -282,7 +291,7 @@ namespace DuiLib
 		else if( _tcscmp(pstrName, _T("endellipsis")) == 0 ) {
 			if( _tcscmp(pstrValue, _T("true")) == 0 ) m_uTextStyle |= DT_END_ELLIPSIS;
 			else m_uTextStyle &= ~DT_END_ELLIPSIS;
-		}    
+		}
 		else if( _tcscmp(pstrName, _T("font")) == 0 ) SetFont(_ttoi(pstrValue));
 		else if( _tcscmp(pstrName, _T("textcolor")) == 0 ) {
 			if( *pstrValue == _T('#')) pstrValue = ::CharNext(pstrValue);
@@ -299,10 +308,10 @@ namespace DuiLib
 		else if( _tcscmp(pstrName, _T("textpadding")) == 0 ) {
 			RECT rcTextPadding = { 0 };
 			LPTSTR pstr = NULL;
-			rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);    
-			rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-			rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
-			rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);    
+			rcTextPadding.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);
+			rcTextPadding.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+			rcTextPadding.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
+			rcTextPadding.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
 			SetTextPadding(rcTextPadding);
 		}
 		else if( _tcscmp(pstrName, _T("multiline")) == 0 ) SetMultiLine(_tcscmp(pstrValue, _T("true")) == 0);
@@ -316,7 +325,7 @@ namespace DuiLib
 		else if( _tcscmp(pstrName, _T("gradientlength")) == 0 ) SetGradientLength(_ttoi(pstrValue));
 		else if( _tcscmp(pstrName, _T("shadowoffset")) == 0 ){
 			LPTSTR pstr = NULL;
-			int offsetx = _tcstol(pstrValue, &pstr, 10);	ASSERT(pstr);    
+			int offsetx = _tcstol(pstrValue, &pstr, 10);	ASSERT(pstr);
 			int offsety = _tcstol(pstr + 1, &pstr, 10);		ASSERT(pstr);
 			SetShadowOffset(offsetx,offsety);
 		}
@@ -485,6 +494,8 @@ namespace DuiLib
 
 	void CLabelUI::SetShadowOffset( int _offset,int _angle )
 	{
+        DPI_SCALE(&_offset);
+        DPI_SCALE(&_angle);
 		if(_angle > 180 || _angle < -180) return;
 
 		RECT rc = m_rcItem;
@@ -628,6 +639,7 @@ namespace DuiLib
 
 	void CLabelUI::SetGradientLength( int _GradientLength )
 	{
+        DPI_SCALE(&_GradientLength);
 		m_GradientLength	= _GradientLength;
 		Invalidate();
 	}

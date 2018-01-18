@@ -1,4 +1,6 @@
 #include "StdAfx.h"
+#include <GdiPlus.h>
+using namespace Gdiplus;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 DECLARE_HANDLE(HZIP);	// An HZIP identifies a zip file that has been opened
@@ -332,6 +334,88 @@ void CRenderEngine::AdjustImage(bool bUseHSL, TImageInfo* imageInfo, short H, sh
 	}
 }
 
+static Gdiplus::Bitmap *LoadImageFromData(const BYTE *pFileData, DWORD dwFileSize)
+{
+    assert(pFileData != NULL && dwFileSize > 0);
+    if(pFileData == NULL || dwFileSize == 0)
+        return NULL;
+
+    HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, dwFileSize);
+    if(hGlobal == NULL)
+        return NULL;
+
+    Gdiplus::Bitmap *pImage = NULL;
+
+    void *pMemData = GlobalLock(hGlobal);
+    memcpy(pMemData, pFileData, dwFileSize);
+    GlobalUnlock(hGlobal);
+
+    IStream *pStream = NULL;
+    if(CreateStreamOnHGlobal(hGlobal, TRUE, &pStream) == S_OK)
+    {
+        pImage = Gdiplus::Bitmap::FromStream(pStream);
+
+        pStream->Release();
+    }
+
+    GlobalFree(hGlobal);
+    return pImage;
+}
+
+static HBITMAP LoadBitmapFromData(const BYTE *pFileData, DWORD dwFileSize, unsigned int& cx, unsigned int& cy)
+{
+    assert(pFileData != NULL && dwFileSize > 0);
+    if(pFileData == NULL || dwFileSize == 0)
+        return NULL;
+
+    HGLOBAL hGlobal = GlobalAlloc(GMEM_MOVEABLE, dwFileSize);
+    if(hGlobal == NULL)
+        return NULL;
+
+    HBITMAP hBitmap = NULL;
+
+    void *pMemData = GlobalLock(hGlobal);
+    if (pMemData == NULL)
+        return hBitmap;
+
+    __try
+    {
+        memcpy(pMemData, pFileData, dwFileSize);
+    }
+    __except(GetExceptionCode() == EXCEPTION_IN_PAGE_ERROR ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+    {
+        // 使用了filemapping，文件损坏时，会读取文件异常
+        GlobalUnlock(hGlobal);
+        GlobalFree(hGlobal);
+        return NULL;
+    }
+
+    GlobalUnlock(hGlobal);
+
+    IStream *pStream = NULL;
+    if(CreateStreamOnHGlobal(hGlobal, TRUE, &pStream) == S_OK)
+    {
+        Gdiplus::Bitmap *pImage = Gdiplus::Bitmap::FromStream(pStream);
+
+        if(pImage != NULL)
+        {
+            Gdiplus::Color colorBackground;
+            pImage->GetHBITMAP(colorBackground, &hBitmap);  // 待测试其效率
+            //HDC hDc = GetDC(NULL);
+            //hBitmap = ImageToBitmap(pImage, hDc);
+            //ReleaseDC(NULL, hDc);
+            cx = pImage->GetWidth();
+            cy = pImage->GetHeight();
+            delete pImage;
+        }
+
+        pStream->Release();
+    }
+
+    GlobalFree(hGlobal);
+    return hBitmap;
+}
+
 TImageInfo* CRenderEngine::LoadImage(STRINGorID bitmap, LPCTSTR type, DWORD mask)
 {
     LPBYTE pData = NULL;
@@ -428,6 +512,14 @@ TImageInfo* CRenderEngine::LoadImage(STRINGorID bitmap, LPCTSTR type, DWORD mask
 		return NULL;
 	}
 
+    /*
+    unsigned int x = 0;
+    unsigned int y = 0;
+    bool bAlphaChannel = true;
+    LPBYTE pDest = NULL;
+    HBITMAP hBitmap = LoadBitmapFromData(pData, dwSize, x, y);
+    */
+    //
     LPBYTE pImage = NULL;
     int x = 1, y = 1, n;
     if (!type || _tcscmp(type, RES_TYPE_COLOR) != 0) {
@@ -464,7 +556,7 @@ TImageInfo* CRenderEngine::LoadImage(STRINGorID bitmap, LPCTSTR type, DWORD mask
         DWORD clrColor = _tcstoul(pstrValue, &pstr, 16);
 
         pImage = (LPBYTE)&clrColor;
-        /* BGRA -> RGBA */
+        // BGRA -> RGBA
         bColorBits[3] = pImage[3];
         bColorBits[2] = pImage[0];
         bColorBits[1] = pImage[1];
@@ -501,7 +593,7 @@ TImageInfo* CRenderEngine::LoadImage(STRINGorID bitmap, LPCTSTR type, DWORD mask
     if (!type || _tcscmp(type, RES_TYPE_COLOR) != 0) {
         stbi_image_free(pImage);
     }
-
+    //
 	TImageInfo* data = new TImageInfo;
 	data->hBitmap = hBitmap;
 	data->pBits = pDest;
@@ -542,6 +634,9 @@ void CRenderEngine::DrawImage(HDC hDC, HBITMAP hBitmap, const RECT& rc, const RE
 	HDC hCloneDC = ::CreateCompatibleDC(hDC);
 	HBITMAP hOldBitmap = (HBITMAP) ::SelectObject(hCloneDC, hBitmap);
 	::SetStretchBltMode(hDC, COLORONCOLOR);
+    //HBITMAP hTempBitmap = ::CreateCompatibleBitmap(hDC, rcPaint.right - rcPaint.left, rcPaint.bottom - rcPaint.top);
+    //::SetStretchBltMode(hDC, HALFTONE);
+    //::SetBrushOrgEx(hDC,0,0,NULL);
 
 	RECT rcTemp = {0};
 	RECT rcDest = {0};
@@ -1002,6 +1097,7 @@ bool CRenderEngine::DrawImage(HDC hDC, CPaintManagerUI* pManager, const RECT& rc
 		CDuiString sValue;
 		LPTSTR pstr = NULL;
 		LPCTSTR pstrImage = drawInfo.sDrawString.GetData();
+        unsigned int uSize = 0;
 		while( *pstrImage != _T('\0') ) {
 			sItem.Empty();
 			sValue.Empty();
@@ -1027,6 +1123,9 @@ bool CRenderEngine::DrawImage(HDC hDC, CPaintManagerUI* pManager, const RECT& rc
 				if( sItem == _T("file") ) {
 					sImageName = sValue;
 				}
+                if( sItem == _T("imagesize") ) {
+                    uSize = _ttoi(sValue);//_wtoi
+                }
 				else if( sItem == _T("res") ) {
 					bUseRes = true;
 					sImageName = sValue;
@@ -1040,21 +1139,33 @@ bool CRenderEngine::DrawImage(HDC hDC, CPaintManagerUI* pManager, const RECT& rc
 					sImageName = sValue;
 				}
 				else if( sItem == _T("dest") ) {
-					drawInfo.rcDestOffset.left = _tcstol(sValue.GetData(), &pstr, 10);  ASSERT(pstr);    
+					drawInfo.rcDestOffset.left = _tcstol(sValue.GetData(), &pstr, 10);  ASSERT(pstr);
 					drawInfo.rcDestOffset.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
 					drawInfo.rcDestOffset.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
 					drawInfo.rcDestOffset.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
+                    DPI_SCALE(&drawInfo.rcDestOffset);
 				}
 				else if( sItem == _T("source") ) {
-					drawInfo.rcBmpPart.left = _tcstol(sValue.GetData(), &pstr, 10);  ASSERT(pstr);    
-					drawInfo.rcBmpPart.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-					drawInfo.rcBmpPart.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
-					drawInfo.rcBmpPart.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);  
+					drawInfo.rcBmpPart.left = _tcstol(sValue.GetData(), &pstr, 10);  ASSERT(pstr);
+					drawInfo.rcBmpPart.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+					drawInfo.rcBmpPart.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
+					drawInfo.rcBmpPart.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
+                    if (uSize != 0)
+                    {
+                        drawInfo.rcBmpPart.left = drawInfo.rcBmpPart.left / uSize * DPI_SCALE_FORCE(uSize);
+                        drawInfo.rcBmpPart.top = drawInfo.rcBmpPart.top / uSize * DPI_SCALE_FORCE(uSize);
+                        drawInfo.rcBmpPart.right = drawInfo.rcBmpPart.right / uSize * DPI_SCALE_FORCE(uSize);
+                        drawInfo.rcBmpPart.bottom = drawInfo.rcBmpPart.bottom / uSize * DPI_SCALE_FORCE(uSize);
+                    }
+                    else
+                    {
+                        DPI_SCALE_MAX(&drawInfo.rcBmpPart);
+                    }
 				}
 				else if( sItem == _T("corner") || sItem == _T("scale9")) {
-					drawInfo.rcScale9.left = _tcstol(sValue.GetData(), &pstr, 10);  ASSERT(pstr);    
-					drawInfo.rcScale9.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-					drawInfo.rcScale9.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
+					drawInfo.rcScale9.left = _tcstol(sValue.GetData(), &pstr, 10);  ASSERT(pstr);
+					drawInfo.rcScale9.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+					drawInfo.rcScale9.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
 					drawInfo.rcScale9.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
 				}
 				else if( sItem == _T("mask") ) {
@@ -1116,6 +1227,10 @@ bool CRenderEngine::DrawImage(HDC hDC, CPaintManagerUI* pManager, const RECT& rc
 	RECT rcTemp;
 	if( !::IntersectRect(&rcTemp, &rcDest, &rcItem) ) return true;
 	if( !::IntersectRect(&rcTemp, &rcDest, &rcPaint) ) return true;
+
+    //TImageInfo* data_tmp = const_cast<TImageInfo*>(drawInfo.pImageInfo);
+    //data_tmp->Resample(rcDest.right - rcDest.left, rcDest.bottom - rcDest.top);
+
 	DrawImage(hDC, drawInfo.pImageInfo->hBitmap, rcDest, rcPaint, drawInfo.rcBmpPart, drawInfo.rcScale9,
 		drawInfo.pImageInfo->bAlpha, drawInfo.uFade, drawInfo.bHole, drawInfo.bTiledX, drawInfo.bTiledY);
 	return true;

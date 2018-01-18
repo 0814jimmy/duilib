@@ -104,7 +104,7 @@ namespace DuiLib
 		if( m_pManager != NULL ) m_pManager->InitControls(pControl, this);
 		if( IsVisible() ) NeedUpdate();
 		else pControl->SetInternVisible(false);
-		return m_items.Add(pControl);   
+		return m_items.Add(pControl);
 	}
 
 	bool CContainerUI::AddAt(CControlUI* pControl, int iIndex)
@@ -147,7 +147,7 @@ namespace DuiLib
 	void CContainerUI::RemoveAll()
 	{
 		for( int it = 0; m_bAutoDestroy && it < m_items.GetSize(); it++ ) {
-			if( m_bDelayedDestroy && m_pManager ) m_pManager->AddDelayedCleanup(static_cast<CControlUI*>(m_items[it]));             
+			if( m_bDelayedDestroy && m_pManager ) m_pManager->AddDelayedCleanup(static_cast<CControlUI*>(m_items[it]));
 			else static_cast<CControlUI*>(m_items[it])->Delete();
 		}
 		m_items.Empty();
@@ -181,6 +181,7 @@ namespace DuiLib
 
 	void CContainerUI::SetInset(RECT rcInset)
 	{
+        DPI_SCALE(&rcInset);
 		m_rcInset = rcInset;
 		NeedUpdate();
 	}
@@ -192,6 +193,7 @@ namespace DuiLib
 
 	void CContainerUI::SetChildPadding(int iPadding)
 	{
+        DPI_SCALE(&iPadding);
 		m_iChildPadding = iPadding;
 		if (m_iChildPadding < 0) m_iChildPadding = 0;
 		NeedUpdate();
@@ -417,8 +419,9 @@ namespace DuiLib
 	void CContainerUI::LineUp()
 	{
 		int cyLine = SCROLLBAR_LINESIZE;
+        DPI_SCALE(&cyLine);
 		if( m_pManager ) {
-            cyLine = m_pManager->GetDefaultFontInfo()->tm.tmHeight + 8;
+            cyLine = m_pManager->GetDefaultFontInfo()->tm.tmHeight + DPI_SCALE_FORCE(8);
             if (m_pVerticalScrollBar && m_pVerticalScrollBar->GetScrollUnit() > 1)
                 cyLine = m_pVerticalScrollBar->GetScrollUnit();
         }
@@ -431,8 +434,9 @@ namespace DuiLib
 	void CContainerUI::LineDown()
 	{
 		int cyLine = SCROLLBAR_LINESIZE;
+        DPI_SCALE(&cyLine);
 		if( m_pManager ) {
-            cyLine = m_pManager->GetDefaultFontInfo()->tm.tmHeight + 8;
+            cyLine = m_pManager->GetDefaultFontInfo()->tm.tmHeight + DPI_SCALE_FORCE(8);
             if (m_pVerticalScrollBar && m_pVerticalScrollBar->GetScrollUnit() > 1)
                 cyLine = m_pVerticalScrollBar->GetScrollUnit();
         }
@@ -477,6 +481,7 @@ namespace DuiLib
 	void CContainerUI::LineLeft()
 	{
         int cxLine = SCROLLBAR_LINESIZE;
+        DPI_SCALE(&cxLine);
         if (m_pHorizontalScrollBar && m_pHorizontalScrollBar->GetScrollUnit() > 1)
             cxLine = m_pHorizontalScrollBar->GetScrollUnit();
 
@@ -488,6 +493,7 @@ namespace DuiLib
 	void CContainerUI::LineRight()
 	{
         int cxLine = SCROLLBAR_LINESIZE;
+        DPI_SCALE(&cxLine);
         if (m_pHorizontalScrollBar && m_pHorizontalScrollBar->GetScrollUnit() > 1)
             cxLine = m_pHorizontalScrollBar->GetScrollUnit();
 
@@ -532,7 +538,7 @@ namespace DuiLib
 	{
 		if( bEnableVertical && !m_pVerticalScrollBar ) {
 			m_pVerticalScrollBar = new CScrollBarUI;
-			m_pVerticalScrollBar->SetScrollRange(0);
+			
 			m_pVerticalScrollBar->SetOwner(this);
 			m_pVerticalScrollBar->SetManager(m_pManager, NULL, false);
 			if ( m_pManager ) {
@@ -541,6 +547,7 @@ namespace DuiLib
 					m_pVerticalScrollBar->SetAttributeList(pDefaultAttributes);
 				}
 			}
+            m_pVerticalScrollBar->SetScrollRange(0);
 		}
 		else if( !bEnableVertical && m_pVerticalScrollBar ) {
 			m_pVerticalScrollBar->Delete();
@@ -677,10 +684,10 @@ namespace DuiLib
 		if( _tcscmp(pstrName, _T("inset")) == 0 ) {
 			RECT rcInset = { 0 };
 			LPTSTR pstr = NULL;
-			rcInset.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);    
-			rcInset.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);    
-			rcInset.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);    
-			rcInset.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);    
+			rcInset.left = _tcstol(pstrValue, &pstr, 10);  ASSERT(pstr);
+			rcInset.top = _tcstol(pstr + 1, &pstr, 10);    ASSERT(pstr);
+			rcInset.right = _tcstol(pstr + 1, &pstr, 10);  ASSERT(pstr);
+			rcInset.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
 			SetInset(rcInset);
 		}
 		else if( _tcscmp(pstrName, _T("mousechild")) == 0 ) SetMouseChildEnabled(_tcscmp(pstrValue, _T("true")) == 0);

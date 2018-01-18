@@ -27,6 +27,10 @@ CScrollBarUI::CScrollBarUI() :
 	::ZeroMemory(&m_rcThumb, sizeof(m_rcThumb));
 	::ZeroMemory(&m_rcButton1, sizeof(m_rcButton1));
 	::ZeroMemory(&m_rcButton2, sizeof(m_rcButton2));
+    DPI_SCALE(&m_nRange);
+    DPI_SCALE(&m_cxyFixed.cx);
+    DPI_SCALE(&m_nLineSize);
+    //DPI_SCALE(&m_nScrollUnit);
 }
 
 LPCTSTR CScrollBarUI::GetClass() const
@@ -89,12 +93,14 @@ void CScrollBarUI::SetHorizontal(bool bHorizontal)
 		if( m_cxyFixed.cy == 0 ) {
 			m_cxyFixed.cx = 0;
 			m_cxyFixed.cy = DEFAULT_SCROLLBAR_SIZE;
+            DPI_SCALE(&m_cxyFixed.cy);
 		}
 	}
 	else {
 		if( m_cxyFixed.cx == 0 ) {
 			m_cxyFixed.cx = DEFAULT_SCROLLBAR_SIZE;
 			m_cxyFixed.cy = 0;
+            DPI_SCALE(&m_cxyFixed.cx);
 		}
 	}
 
@@ -108,6 +114,7 @@ int CScrollBarUI::GetScrollRange() const
 
 void CScrollBarUI::SetScrollRange(int nRange)
 {
+    //DPI_SCALE(&nRange);// 外部传入已经缩放
 	if( m_nRange == nRange ) return;
 
 	m_nRange = nRange;
@@ -123,6 +130,7 @@ int CScrollBarUI::GetScrollPos() const
 
 void CScrollBarUI::SetScrollPos(int nPos, bool bTriggerEvent)
 {
+    //DPI_SCALE(&nPos);// 外部传入已经缩放
 	if( m_nScrollPos == nPos ) return;
 
 	int iOldScrollPos = m_nScrollPos;
@@ -151,6 +159,7 @@ int CScrollBarUI::GetLineSize() const
 
 void CScrollBarUI::SetLineSize(int nSize)
 {
+    DPI_SCALE(&nSize);
     if (nSize >= 0) m_nLineSize = nSize;
 }
 
@@ -161,6 +170,7 @@ int CScrollBarUI::GetScrollUnit() const
 
 void CScrollBarUI::SetScrollUnit(int iUnit)
 {
+    DPI_SCALE(&iUnit);
     if (iUnit >= 0) m_nScrollUnit = iUnit;
 }
 
@@ -920,8 +930,8 @@ void CScrollBarUI::SetAttribute(LPCTSTR pstrName, LPCTSTR pstrValue)
 	else if( _tcscmp(pstrName, _T("bkdisabledimage")) == 0 ) SetBkDisabledImage(pstrValue);
 	else if( _tcscmp(pstrName, _T("hor")) == 0 ) SetHorizontal(_tcscmp(pstrValue, _T("true")) == 0);
 	else if( _tcscmp(pstrName, _T("linesize")) == 0 ) SetLineSize(_ttoi(pstrValue));
-	else if( _tcscmp(pstrName, _T("range")) == 0 ) SetScrollRange(_ttoi(pstrValue));
-	else if( _tcscmp(pstrName, _T("value")) == 0 ) SetScrollPos(_ttoi(pstrValue));
+	else if( _tcscmp(pstrName, _T("range")) == 0 ) SetScrollRange(DPI_SCALE_FORCE(_ttoi(pstrValue)));
+	else if( _tcscmp(pstrName, _T("value")) == 0 ) SetScrollPos(DPI_SCALE_FORCE(_ttoi(pstrValue)));
     else if( _tcscmp(pstrName, _T("scrollunit")) == 0 ) SetScrollUnit(_ttoi(pstrValue));
 	else if( _tcscmp(pstrName, _T("showbutton1")) == 0 ) SetShowButton1(_tcscmp(pstrValue, _T("true")) == 0);
 	else if( _tcscmp(pstrName, _T("showbutton2")) == 0 ) SetShowButton2(_tcscmp(pstrValue, _T("true")) == 0);

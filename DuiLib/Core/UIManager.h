@@ -96,6 +96,22 @@ typedef struct DUILIB_API tagTFontInfo
 
 typedef struct DUILIB_API tagTImageInfo
 {
+public:
+    tagTImageInfo()
+    {
+        hBitmap = NULL;
+        pBits = NULL;
+        pSrcBits = NULL;
+        nX = 0;
+        nY = 0;
+        bAlpha =false;
+        bUseHSL = false;
+        dwMask = 0;
+    }
+public:
+    BOOL Resample(int nNewWidth, int nNewHeight);
+    HBITMAP CreateNewHBitmap(int nNewWidth, int nNewHeight);
+public:
     HBITMAP hBitmap;
     LPBYTE pBits;
 	LPBYTE pSrcBits;

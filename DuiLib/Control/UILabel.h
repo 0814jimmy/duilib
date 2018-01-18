@@ -13,7 +13,6 @@ class DUILIB_API Gdiplus::RectF;
 struct DUILIB_API Gdiplus::GdiplusStartupInput;
 #endif
 
-
 namespace DuiLib
 {
 	class DUILIB_API CLabelUI : public CControlUI
@@ -33,7 +32,9 @@ namespace DuiLib
 		UINT GetTextStyle() const;
 		bool IsMultiLine();
 		void SetMultiLine(bool bMultiLine = true);
-		void SetTextColor(DWORD dwTextColor);
+        bool GetMultiLine();
+
+        void SetTextColor(DWORD dwTextColor);
 		DWORD GetTextColor() const;
 		void SetDisabledTextColor(DWORD dwTextColor);
 		DWORD GetDisabledTextColor() const;
@@ -101,10 +102,12 @@ namespace DuiLib
 		DWORD					m_dwTextShadowColorB;
 		DWORD					m_dwStrokeColor;
 		RectF					m_ShadowOffset;
+        /*
 		ULONG_PTR				m_gdiplusToken;
 #ifdef _USE_GDIPLUS
 		GdiplusStartupInput		m_gdiplusStartupInput;
 #endif
+        */
 	};
 }
 

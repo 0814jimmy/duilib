@@ -117,6 +117,7 @@ CControlUI* CDialogBuilder::Create(IDialogBuilderCallback* pCallback, CPaintMana
 					}
                 }
                 if( id >= 0 && pFontName ) {
+                    DPI_SCALE(&size);
                     pManager->AddFont(id, pFontName, size, bold, underline, italic, shared);
                     if( defaultfont ) pManager->SetDefaultFont(pFontName, size, bold, underline, italic, shared);
                 }

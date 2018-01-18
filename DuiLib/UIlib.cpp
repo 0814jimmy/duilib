@@ -63,3 +63,20 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID /*lpReserved*/)
     }
     return TRUE;
 }
+
+Gdiplus::GdiplusStartupInput g_gdiplusStartupInput;
+ULONG_PTR   g_gdiplusToken = 0;
+namespace DuiLib
+{
+    DUILIB_API void InitDuiLib(unsigned int uDPI)
+    {
+        ::GdiplusStartup(&g_gdiplusToken, &g_gdiplusStartupInput, NULL);
+        CDPIHelper::getInstance()->Init(uDPI);
+    }
+
+    DUILIB_API void UnInitDuiLib()
+    {
+        ::GdiplusShutdown(g_gdiplusToken);
+        CDPIHelper::DeleteInstance();
+    }
+}

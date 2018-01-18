@@ -242,6 +242,23 @@ void CWebBrowserUI::DocumentComplete(IDispatch *pDisp,VARIANT *&url)
 	{
 		m_pWebBrowserEventHandler->DocumentComplete(pDisp,url);
 	}
+
+    /*
+    CComPtr<IDispatch> spDoc;
+    m_pWebBrowser2->get_Document(&spDoc);
+    CComQIPtr<IHTMLDocument2> pDocument;
+    CComQIPtr<IHTMLElement> pEl;
+    CComQIPtr<IHTMLBodyElement> pBodyEl;
+    spDoc->QueryInterface(IID_IHTMLDocument2, (void **)&pDocument);
+
+    if(pDocument && SUCCEEDED(pDocument->get_body(&pEl)))
+    { 
+        if(pEl && SUCCEEDED(pEl->QueryInterface(IID_IHTMLBodyElement, (void**)&pBodyEl)))
+        {
+            pBodyEl->put_scroll(L"no");
+        }
+    }
+    */
 }
 
 void CWebBrowserUI::ProgressChange( LONG nProgress, LONG nProgressMax )

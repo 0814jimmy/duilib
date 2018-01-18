@@ -8,6 +8,7 @@ namespace DuiLib
 		m_uTextStyle = DT_WORDBREAK;
 		m_rcTextPadding.left = 2;
 		m_rcTextPadding.right = 2;
+        DPI_SCALE(&m_rcTextPadding);
 		::ZeroMemory(m_rcLinks, sizeof(m_rcLinks));
 	}
 
