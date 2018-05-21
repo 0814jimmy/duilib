@@ -81,6 +81,7 @@
 #include "Utils/WinImplBase.h"
 #include "Utils/WndShadow.h"
 #include "Utils/DpiHelper.h"
+#include "Utils/KeyboardHookProtect.h"
 
 #include "Layout/UIVerticalLayout.h"
 #include "Layout/UIHorizontalLayout.h"
@@ -111,3 +112,6 @@
 #include "Control/UIWebBrowser.h"
 #include "Control/UIGifAnim.h"
 //#include "Control/UIFlash.h"
+
+
+#pragma comment( lib, "comctl32.lib" )

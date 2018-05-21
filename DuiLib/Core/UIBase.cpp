@@ -261,7 +261,7 @@ HWND CWindowWnd::Subclass(HWND hWnd)
     if( m_OldWndProc == NULL ) return NULL;
     m_bSubclassed = true;
     m_hWnd = hWnd;
-    ::SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LPARAM>(this));
+    ::SetWindowLongPtr(hWnd, GWLP_USERDATA, (__int3264)reinterpret_cast<LPARAM>(this));
     return m_hWnd;
 }
 
@@ -292,7 +292,7 @@ UINT CWindowWnd::ShowModal()
     MSG msg = { 0 };
     while( ::IsWindow(m_hWnd) && ::GetMessage(&msg, NULL, 0, 0) ) {
         if( msg.message == WM_CLOSE && msg.hwnd == m_hWnd ) {
-            nRet = msg.wParam;
+            nRet = (UINT)msg.wParam;
             ::EnableWindow(hWndParent, TRUE);
             ::SetFocus(hWndParent);
         }
@@ -304,7 +304,7 @@ UINT CWindowWnd::ShowModal()
     }
     ::EnableWindow(hWndParent, TRUE);
     ::SetFocus(hWndParent);
-    if( msg.message == WM_QUIT ) ::PostQuitMessage(msg.wParam);
+    if( msg.message == WM_QUIT ) ::PostQuitMessage((int)msg.wParam);
     return nRet;
 }
 
@@ -411,7 +411,7 @@ LRESULT CALLBACK CWindowWnd::__WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
         LPCREATESTRUCT lpcs = reinterpret_cast<LPCREATESTRUCT>(lParam);
         pThis = static_cast<CWindowWnd*>(lpcs->lpCreateParams);
         pThis->m_hWnd = hWnd;
-        ::SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LPARAM>(pThis));
+        ::SetWindowLongPtr(hWnd, GWLP_USERDATA, (__int3264)reinterpret_cast<LPARAM>(pThis));
     } 
     else {
         pThis = reinterpret_cast<CWindowWnd*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));

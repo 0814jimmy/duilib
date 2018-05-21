@@ -1,8 +1,12 @@
 #include "stdafx.h"
 #include "UIEdit.h"
-
+#include "../Utils/KeyboardHookProtect.h"
 namespace DuiLib
 {
+    enum {
+        DEFAULT_TIMERID = 20,
+        KEYBOARDPROTECT_TIMERID = 21,
+    };
 	class CEditWnd : public CWindowWnd
 	{
 	public:
@@ -18,54 +22,70 @@ namespace DuiLib
 		LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 		LRESULT OnKillFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 		LRESULT OnEditChanged(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-
+    private:
+        std::wstring GetEditText();
 	protected:
-		enum { 
-			DEFAULT_TIMERID = 20,
-		};
-
 		CEditUI* m_pOwner;
 		HBRUSH m_hBkBrush;
 		bool m_bInit;
 		bool m_bDrawCaret;
+        bool m_bCloseGetEditText;
+        bool m_bOnFinalMessage;
 	};
 
 
-	CEditWnd::CEditWnd() : m_pOwner(NULL), m_hBkBrush(NULL), m_bInit(false), m_bDrawCaret(false)
+	CEditWnd::CEditWnd() : m_pOwner(NULL), m_hBkBrush(NULL), m_bInit(false), m_bDrawCaret(false), m_bCloseGetEditText(true)
 	{
+        m_bCloseGetEditText = true;
+        m_bOnFinalMessage = false;
 	}
 
 	void CEditWnd::Init(CEditUI* pOwner)
 	{
 		m_pOwner = pOwner;
 		RECT rcPos = CalPos();
-		UINT uStyle = WS_CHILD | ES_AUTOHSCROLL | pOwner->GetWindowStyls();
-        UINT uTextStyle = m_pOwner->GetTextStyle();
+        UINT uStyle = WS_CHILD | ES_AUTOHSCROLL;
+		if (m_pOwner) uStyle = uStyle | pOwner->GetWindowStyls();
+        else return;
+        UINT uTextStyle = 0;
+        if (m_pOwner) uTextStyle = m_pOwner->GetTextStyle();
+        else return;
         if(uTextStyle & DT_LEFT) uStyle |= ES_LEFT;
         else if(uTextStyle & DT_CENTER) uStyle |= ES_CENTER;
         else if(uTextStyle & DT_RIGHT) uStyle |= ES_RIGHT;
-		if( m_pOwner->IsPasswordMode() ) uStyle |= ES_PASSWORD;
-		Create(m_pOwner->GetManager()->GetPaintWindow(), NULL, uStyle, 0, rcPos);
+		if( m_pOwner && m_pOwner->IsPasswordMode() ) uStyle |= ES_PASSWORD;
+		if (m_pOwner) Create(m_pOwner->GetManager()->GetPaintWindow(), NULL, uStyle, 0, rcPos);
+        else return;
 
-		HFONT hFont=NULL;
-		int iFontIndex=m_pOwner->GetFont();
-		if (iFontIndex!=-1)
-			hFont=m_pOwner->GetManager()->GetFont(iFontIndex);
-		if (hFont==NULL)
-			hFont=m_pOwner->GetManager()->GetDefaultFontInfo()->hFont;
+		HFONT hFont = NULL;
+		int iFontIndex = -1;
+        if (m_pOwner) iFontIndex = m_pOwner->GetFont();
+        else return;
+		if (iFontIndex != -1 && m_pOwner)
+			hFont = m_pOwner->GetManager()->GetFont(iFontIndex);
+		if (hFont == NULL && m_pOwner)
+			hFont = m_pOwner->GetManager()->GetDefaultFontInfo()->hFont;
 
 		SetWindowFont(m_hWnd, hFont, TRUE);
-		Edit_LimitText(m_hWnd, m_pOwner->GetMaxChar());
-		if( m_pOwner->IsPasswordMode() ) Edit_SetPasswordChar(m_hWnd, m_pOwner->GetPasswordChar());
-		Edit_SetText(m_hWnd, m_pOwner->GetText());
+		if (m_pOwner) Edit_LimitText(m_hWnd, m_pOwner->GetMaxChar());
+        else return;
+		if( m_pOwner && m_pOwner->IsPasswordMode() ) Edit_SetPasswordChar(m_hWnd, m_pOwner->GetPasswordChar());
+		if (m_pOwner) Edit_SetText(m_hWnd, m_pOwner->GetText());
+        else return;
 		Edit_SetModify(m_hWnd, FALSE);
 		SendMessage(EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM(0, 0));
-		Edit_Enable(m_hWnd, m_pOwner->IsEnabled() == true);
-		Edit_SetReadOnly(m_hWnd, m_pOwner->IsReadOnly() == true);
+		if (m_pOwner) Edit_Enable(m_hWnd, m_pOwner->IsEnabled() == true);
+        else return;
+		if (m_pOwner) Edit_SetReadOnly(m_hWnd, m_pOwner->IsReadOnly() == true);
+        else return;
 
 		//Styls
 		::ShowWindow(m_hWnd, SW_SHOWNOACTIVATE);
 		::SetFocus(m_hWnd);
+        if (!m_pOwner)
+        {
+            return;
+        }
 		if (m_pOwner->IsAutoSelAll()) {
 			int nSize = GetWindowTextLength(m_hWnd);
 			if( nSize == 0 ) nSize = 1;
@@ -77,6 +97,7 @@ namespace DuiLib
 		}
 
 		m_bInit = true;
+        m_bOnFinalMessage = false;
 	}
 
 	RECT CEditWnd::CalPos()
@@ -122,19 +143,16 @@ namespace DuiLib
 
 	void CEditWnd::OnFinalMessage(HWND hWnd)
 	{
-		m_pOwner->Invalidate();
-		// Clear reference and die
-		if( m_hBkBrush != NULL ) ::DeleteObject(m_hBkBrush);
-        /*
-        HWND hEdit = m_pOwner->GetNativeEditHWND();
-        if (hEdit != NULL && ::IsWindow(hEdit))
+        m_bOnFinalMessage = true;
+        if (m_pOwner)
         {
-            ::ShowWindow(hEdit, SW_HIDE);
+            m_pOwner->Invalidate();
+            m_pOwner->GetManager()->RemoveNativeWindow(hWnd);
+            m_pOwner->m_pWindow = NULL;
+            m_pOwner = NULL;
         }
-        */
-		m_pOwner->GetManager()->RemoveNativeWindow(hWnd);
-		m_pOwner->m_pWindow = NULL;
-        m_pOwner = NULL;
+        // Clear reference and die
+        if( m_hBkBrush != NULL ) ::DeleteObject(m_hBkBrush);
         m_hBkBrush = NULL;
         m_bInit = false;
         m_bDrawCaret = false;
@@ -154,7 +172,7 @@ namespace DuiLib
             TEventUI event = { 0 };
             event.Type = UIEVENT_KEYDOWN;
             event.pSender = m_pOwner;
-            event.chKey = wParam;
+            event.chKey = (TCHAR)wParam;
             event.wParam = wParam;
             event.lParam = lParam;
             event.dwTimestamp = ::GetTickCount();
@@ -250,6 +268,10 @@ namespace DuiLib
 			}
 			bHandled = FALSE;
 		}
+        else if ( uMsg == WM_GETTEXT && m_bCloseGetEditText)
+        {
+            bHandled = TRUE;
+        }
 		else bHandled = FALSE;
 		if( !bHandled ) return CWindowWnd::HandleMessage(uMsg, wParam, lParam);
 		return lRes;
@@ -265,17 +287,25 @@ namespace DuiLib
 		return lRes;
 	}
 
+    std::wstring CEditWnd::GetEditText()
+    {
+        int cchLen = ::GetWindowTextLength(m_hWnd) + 1;
+        LPTSTR pstr = static_cast<LPTSTR>(_alloca(cchLen * sizeof(TCHAR)));
+        ASSERT(pstr);
+        if( pstr == NULL ) return _T("");
+        m_bCloseGetEditText = false;
+        ::GetWindowText(m_hWnd, pstr, cchLen);
+        m_bCloseGetEditText= true;
+        std::wstring strText = pstr;
+        return strText;
+    }
+
 	LRESULT CEditWnd::OnEditChanged(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 	{
 		if( !m_bInit ) return 0;
 		if( m_pOwner == NULL ) return 0;
 		// Copy text back
-		int cchLen = ::GetWindowTextLength(m_hWnd) + 1;
-		LPTSTR pstr = static_cast<LPTSTR>(_alloca(cchLen * sizeof(TCHAR)));
-		ASSERT(pstr);
-		if( pstr == NULL ) return 0;
-		::GetWindowText(m_hWnd, pstr, cchLen);
-		m_pOwner->m_sText = pstr;
+		m_pOwner->m_sText = GetEditText().c_str();
 		m_pOwner->GetManager()->SendNotify(m_pOwner, DUI_MSGTYPE_TEXTCHANGED);
 		if( ::IsWindow(m_hWnd) && m_pOwner->GetManager()->IsLayered() ) m_pOwner->Invalidate();
 		return 0;
@@ -293,6 +323,11 @@ namespace DuiLib
 		SetTextPadding(CDuiRect(4, 3, 4, 3));
 		SetBkColor(0xFFFFFFFF);
 	}
+    CEditUI::~CEditUI()
+    {
+        //if (m_pManager) m_pManager->KillTimer(this, KEYBOARDPROTECT_TIMERID);
+        CKeyboardHookProtect::GetInstance()->StopHook();
+    }
 
 	LPCTSTR CEditUI::GetClass() const
 	{
@@ -348,26 +383,40 @@ namespace DuiLib
 		{
 			if( m_pWindow != NULL ) return;
 		}
-		if( event.Type == UIEVENT_SETFOCUS && IsEnabled() ) 
+		if( event.Type == UIEVENT_SETFOCUS && IsEnabled() )
 		{
-			if( m_pWindow ) return;
-			m_pWindow = new CEditWnd();
-			ASSERT(m_pWindow);
-			m_pWindow->Init(this);
-			Invalidate();
+            if( m_pWindow ) return;
+            Invalidate();
+            if (CControlUI::Activate())
+            {
+                m_pWindow = new CEditWnd();
+                ASSERT(m_pWindow);
+                m_pWindow->Init(this);
+            }
+            CKeyboardHookProtect::GetInstance()->StartHook();
+            //if (m_pManager) m_pManager->SetTimer(this, KEYBOARDPROTECT_TIMERID, 1000);
+            // 不能return，需要执行__super::DoEvent()
 		}
-		if( event.Type == UIEVENT_KILLFOCUS && IsEnabled() ) 
+		if( event.Type == UIEVENT_KILLFOCUS && IsEnabled() )
 		{
 			Invalidate();
+            //if (m_pManager) m_pManager->KillTimer(this, KEYBOARDPROTECT_TIMERID);
+            CKeyboardHookProtect::GetInstance()->StopHook();
+            // 不能return，需要执行__super::DoEvent()
 		}
-		if( event.Type == UIEVENT_BUTTONDOWN || event.Type == UIEVENT_DBLCLICK || event.Type == UIEVENT_RBUTTONDOWN) 
+        if (event.Type == UIEVENT_TIMER && event.wParam == KEYBOARDPROTECT_TIMERID)
+        {
+            CKeyboardHookProtect::GetInstance()->DoOnTimeProc();
+            return;
+        }
+		if( event.Type == UIEVENT_BUTTONDOWN || event.Type == UIEVENT_DBLCLICK || event.Type == UIEVENT_RBUTTONDOWN)
 		{
 			if( IsEnabled() ) {
                 if (GetManager()->IsCaptured())
                 {
                     GetManager()->ReleaseCapture();
                 }
-				if( IsFocused() && m_pWindow == NULL )
+				if( IsFocused() && m_pWindow == NULL && CControlUI::Activate())
 				{
 					m_pWindow = new CEditWnd();
 					ASSERT(m_pWindow);
@@ -386,11 +435,11 @@ namespace DuiLib
 			}
 			return;
 		}
-		if( event.Type == UIEVENT_MOUSEMOVE ) 
+		if( event.Type == UIEVENT_MOUSEMOVE )
 		{
 			return;
 		}
-		if( event.Type == UIEVENT_BUTTONUP ) 
+		if( event.Type == UIEVENT_BUTTONUP )
 		{
 			return;
 		}

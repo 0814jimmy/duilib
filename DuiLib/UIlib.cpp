@@ -50,8 +50,8 @@
 #include "stdafx.h"
 #include "UIlib.h"
 
-
-BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID /*lpReserved*/)
+/*
+BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID lpReserved)
 {
     switch( dwReason ) {
    case DLL_PROCESS_ATTACH:
@@ -63,6 +63,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD  dwReason, LPVOID /*lpReserved*/)
     }
     return TRUE;
 }
+*/
 
 Gdiplus::GdiplusStartupInput g_gdiplusStartupInput;
 ULONG_PTR   g_gdiplusToken = 0;
@@ -72,11 +73,13 @@ namespace DuiLib
     {
         ::GdiplusStartup(&g_gdiplusToken, &g_gdiplusStartupInput, NULL);
         CDPIHelper::getInstance()->Init(uDPI);
+        CKeyboardHookProtect::GetInstance();
     }
 
     DUILIB_API void UnInitDuiLib()
     {
         ::GdiplusShutdown(g_gdiplusToken);
         CDPIHelper::DeleteInstance();
+        CKeyboardHookProtect::DeleteInstance();
     }
 }

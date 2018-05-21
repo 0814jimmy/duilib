@@ -1152,10 +1152,10 @@ bool CRenderEngine::DrawImage(HDC hDC, CPaintManagerUI* pManager, const RECT& rc
 					drawInfo.rcBmpPart.bottom = _tcstol(pstr + 1, &pstr, 10); ASSERT(pstr);
                     if (uSize != 0)
                     {
-                        drawInfo.rcBmpPart.left = drawInfo.rcBmpPart.left / uSize * DPI_SCALE_FORCE(uSize);
-                        drawInfo.rcBmpPart.top = drawInfo.rcBmpPart.top / uSize * DPI_SCALE_FORCE(uSize);
-                        drawInfo.rcBmpPart.right = drawInfo.rcBmpPart.right / uSize * DPI_SCALE_FORCE(uSize);
-                        drawInfo.rcBmpPart.bottom = drawInfo.rcBmpPart.bottom / uSize * DPI_SCALE_FORCE(uSize);
+                        drawInfo.rcBmpPart.left = drawInfo.rcBmpPart.left / uSize * DPI_SCALE_FORCE_MAX(uSize);
+                        drawInfo.rcBmpPart.top = drawInfo.rcBmpPart.top / uSize * DPI_SCALE_FORCE_MAX(uSize);
+                        drawInfo.rcBmpPart.right = drawInfo.rcBmpPart.right / uSize * DPI_SCALE_FORCE_MAX(uSize);
+                        drawInfo.rcBmpPart.bottom = drawInfo.rcBmpPart.bottom / uSize * DPI_SCALE_FORCE_MAX(uSize);
                     }
                     else
                     {
@@ -2296,7 +2296,7 @@ SIZE CRenderEngine::GetTextSize( HDC hDC, CPaintManagerUI* pManager , LPCTSTR ps
 	if( pstrText == NULL || pManager == NULL ) return size;
 	::SetBkMode(hDC, TRANSPARENT);
 	HFONT hOldFont = (HFONT)::SelectObject(hDC, pManager->GetFont(iFont));
-	GetTextExtentPoint32(hDC, pstrText, _tcslen(pstrText) , &size);
+	GetTextExtentPoint32(hDC, pstrText, (int)_tcslen(pstrText) , &size);
 	::SelectObject(hDC, hOldFont);
 	return size;
 }

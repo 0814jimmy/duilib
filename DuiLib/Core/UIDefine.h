@@ -120,7 +120,7 @@ protected:                                                                \
 private:                                                                  \
 	static const DUI_MSGMAP_ENTRY _messageEntries[];                      \
 protected:                                                                \
-	static  const DUI_MSGMAP messageMap;				                  \
+	static  const DUI_MSGMAP messageMap;                                  \
 	virtual const DUI_MSGMAP* GetMessageMap() const;                      \
 
 #endif

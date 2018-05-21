@@ -439,7 +439,7 @@ namespace DuiLib
 
 				FontFamily ftFamily;
 				nFont.GetFamily(&ftFamily);
-				int iLen = wcslen(m_pWideText);
+				int iLen = (int)wcslen(m_pWideText);
 				g1.DrawString(m_pWideText,iLen,&nFont,nRc,&format,&nLineGrBrushB);
 
 				g2.DrawImage(&Bit1, 0, 0, (int)iFuzzyWidth, (int)iFuzzyHeight);

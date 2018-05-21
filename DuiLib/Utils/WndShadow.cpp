@@ -179,10 +179,10 @@ void CWndShadow::Create(HWND hParentWnd)
 	}
 
 	// Replace the original WndProc of parent window to steal messages
-	m_OriParentProc = (WNDPROC)GetWindowLongPtr(hParentWnd, GWLP_WNDPROC);
+	m_OriParentProc = (WNDPROC)(LONG_PTR)::GetWindowLongPtr(hParentWnd, GWLP_WNDPROC);
 
 #pragma warning(disable: 4311)	// temporrarily disable the type_cast warning in Win32
-	SetWindowLongPtr(hParentWnd, GWLP_WNDPROC, (LONG_PTR)ParentProc);
+	SetWindowLongPtr(hParentWnd, GWLP_WNDPROC, (__int3264)(LONG_PTR)ParentProc);
 #pragma warning(default: 4311)
 
 }

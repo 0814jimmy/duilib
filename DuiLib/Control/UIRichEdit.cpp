@@ -1771,30 +1771,30 @@ void CRichEditUI::OnTxNotify(DWORD iNotify, void *pv)
 			GetManager()->SendNotify(this, DUI_MSGTYPE_TEXTCHANGED);
 		}
 		break;
-	case EN_DROPFILES:   
-	case EN_MSGFILTER:   
-	case EN_OLEOPFAILED:   
-	case EN_PROTECTED:   
-	case EN_SAVECLIPBOARD:   
-	case EN_SELCHANGE:   
-	case EN_STOPNOUNDO:   
-	case EN_LINK:   
-	case EN_OBJECTPOSITIONS:   
-	case EN_DRAGDROPDONE:   
+	case EN_DROPFILES:
+	case EN_MSGFILTER:
+	case EN_OLEOPFAILED:
+	case EN_PROTECTED:
+	case EN_SAVECLIPBOARD:
+	case EN_SELCHANGE:
+	case EN_STOPNOUNDO:
+	case EN_LINK:
+	case EN_OBJECTPOSITIONS:
+	case EN_DRAGDROPDONE:
 		{
-			if(pv)                        // Fill out NMHDR portion of pv   
-			{   
-				LONG nId =  GetWindowLong(this->GetManager()->GetPaintWindow(), GWL_ID);   
-				NMHDR  *phdr = (NMHDR *)pv;   
-				phdr->hwndFrom = this->GetManager()->GetPaintWindow();   
-				phdr->idFrom = nId;   
-				phdr->code = iNotify;  
+			if(pv)                        // Fill out NMHDR portion of pv
+			{
+				LONG_PTR nId = GetWindowLongPtr(this->GetManager()->GetPaintWindow(), GWLP_ID);
+				NMHDR  *phdr = (NMHDR *)pv;
+				phdr->hwndFrom = this->GetManager()->GetPaintWindow();
+				phdr->idFrom = nId;
+				phdr->code = iNotify;
 
-				if(SendMessage(this->GetManager()->GetPaintWindow(), WM_NOTIFY, (WPARAM) nId, (LPARAM) pv))   
-				{   
-					//hr = S_FALSE;   
-				}   
-			}    
+				if(SendMessage(this->GetManager()->GetPaintWindow(), WM_NOTIFY, (WPARAM) nId, (LPARAM) pv))
+				{
+					//hr = S_FALSE;
+				}
+			}
 		}
 		break;
 	}

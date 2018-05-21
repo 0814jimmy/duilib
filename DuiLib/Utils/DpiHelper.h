@@ -26,11 +26,10 @@ namespace DuiLib
     private:
         CDPIHelper();
         static CDPIHelper* m_pInstance;
-        
+        ~CDPIHelper();
     public:
         static CDPIHelper* getInstance();
         static void DeleteInstance();
-        ~CDPIHelper();
         PROCESS_DPI_AWARENESS GetAwareness() { return m_Awareness; }
         void Init(__in UINT uDPI);
         void UnInit();
@@ -69,8 +68,8 @@ namespace DuiLib
 
         void ScaleMax(__inout RECT *pRect, unsigned int uMaxDPI = 192);
         void UnScaleMax(__inout RECT *pRect, unsigned int uMaxDPI = 192);
-        int ScaleMax(int x, unsigned int uMaxDPI);
-        int UnScaleMax(int x, unsigned int uMaxDPI);
+        int ScaleMax(int x, unsigned int uMaxDPI = 192);
+        int UnScaleMax(int x, unsigned int uMaxDPI = 192);
         UINT GetScaleFactorSDA();
         // 动态回去图片
         // 传入图片名，如果有dpi200的即返回***_@200.png，否则返回原有图片名
@@ -121,6 +120,7 @@ namespace DuiLib
     // 返回值的，不受DPI_AWARE和DPI_UNAWARE影响；线程安全
     #define DPI_SCALE_FORCE(n96Src)                 CDPIHelper::getInstance()->Scale(n96Src)
     #define DPI_UNSCALE_FORCE(nPhysicalDest)        CDPIHelper::getInstance()->UnScale(nPhysicalDest)
+    #define DPI_SCALE_FORCE_MAX(n96Src)             CDPIHelper::getInstance()->ScaleMax(n96Src)
 
     // 图片资源缩放，只支持到200，超过的以200资源缩放
     #define DPI_SCALE_MAX(p96Src)            \

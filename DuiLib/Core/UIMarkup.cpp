@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+#pragma warning( disable: 4244 )
 
 #ifndef TRACE
 #define TRACE
@@ -486,7 +487,7 @@ bool CMarkup::_Parse(LPTSTR& pstrText, ULONG iParent)
         _SkipWhitespace(pstrText);
         // Fill out element structure
         XMLELEMENT* pEl = _ReserveElement();
-        ULONG iPos = pEl - m_pElements;
+        ULONG iPos = (ULONG)(pEl - m_pElements);
         pEl->iStart = pstrText - m_pstrXML;
         pEl->iParent = iParent;
         pEl->iNext = pEl->iChild = 0;
@@ -663,3 +664,4 @@ bool CMarkup::_Failed(LPCTSTR pstrError, LPCTSTR pstrLocation)
 }
 
 } // namespace DuiLib
+#pragma warning( default: 4244 )
